@@ -397,14 +397,14 @@ inline bool IsPassiveSpellStackableWithRanks(SpellEntry const* spellProto)
 inline bool IsDeathOnlySpell(SpellEntry const *spellInfo)
 {
     return spellInfo->AttributesEx3 & SPELL_ATTR_EX3_CAST_ON_DEAD
-        || spellInfo->Id == 2584;
+        || spellInfo->Id == 2584 || spellInfo->Id == 22011;
 }
 
 inline bool IsDeathPersistentSpell(SpellEntry const *spellInfo)
 {
     switch(spellInfo->Id)
     {
-        case 40214:                                     // Dragonmaw Illusion
+        case 40214: case 37128:                                 // Dragonmaw Illusion
         case 35480: case 35481: case 35482:             // Human Illusion
         case 35483: case 39824:                         // Human Illusion
             return true;

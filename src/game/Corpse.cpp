@@ -135,10 +135,10 @@ void Corpse::DeleteFromDB()
 {
     if(GetType() == CORPSE_BONES)
         // only specific bones
-        CharacterDatabase.PExecute("DELETE FROM corpse WHERE guid = '%d'", GetGUIDLow());
+        CharacterDatabase.PExecute("DELETE FROM corpse WHERE guid = '%u'", GetGUIDLow());
     else
         // all corpses (not bones)
-        CharacterDatabase.PExecute("DELETE FROM corpse WHERE player = '%d' AND corpse_type <> '0'",  GUID_LOPART(GetOwnerGUID()));
+        CharacterDatabase.PExecute("DELETE FROM corpse WHERE player = '%u' AND corpse_type <> '0'",  GUID_LOPART(GetOwnerGUID()));
 }
 
 bool Corpse::LoadFromDB(uint32 guid, QueryResult_AutoPtr result, uint32 InstanceId)

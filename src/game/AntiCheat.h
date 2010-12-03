@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "Player.h"
 #include "Language.h"
+#include "ObjectMgr.h"
 
 class Player;
 

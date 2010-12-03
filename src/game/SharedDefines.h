@@ -94,6 +94,44 @@ enum Classes
 
 #define PLAYER_MAX_BATTLEGROUND_QUEUES 3
 
+enum BattleGroundTypeId
+{
+    BATTLEGROUND_TYPE_NONE     = 0,
+    BATTLEGROUND_AV            = 1,
+    BATTLEGROUND_WS            = 2,
+    BATTLEGROUND_AB            = 3,
+    BATTLEGROUND_NA            = 4,
+    BATTLEGROUND_BE            = 5,
+    BATTLEGROUND_AA            = 6,
+    BATTLEGROUND_EY            = 7,
+    BATTLEGROUND_RL            = 8
+};
+#define MAX_BATTLEGROUND_TYPE_ID 9
+
+enum HolidayIds
+{
+    HOLIDAY_NONE                     = 0,
+
+    HOLIDAY_FIREWORKS_SPECTACULAR    = 62,
+    HOLIDAY_FEAST_OF_WINTER_VEIL     = 141,
+    HOLIDAY_NOBLEGARDEN              = 181,
+    HOLIDAY_CHILDRENS_WEEK           = 201,
+    HOLIDAY_CALL_TO_ARMS_AV          = 283,
+    HOLIDAY_CALL_TO_ARMS_WS          = 284,
+    HOLIDAY_CALL_TO_ARMS_AB          = 285,
+    HOLIDAY_FISHING_EXTRAVAGANZA     = 301,
+    HOLIDAY_HARVEST_FESTIVAL         = 321,
+    HOLIDAY_HALLOWS_END              = 324,
+    HOLIDAY_LUNAR_FESTIVAL           = 327,
+    HOLIDAY_LOVE_IS_IN_THE_AIR       = 335,
+    HOLIDAY_FIRE_FESTIVAL            = 341,
+    HOLIDAY_CALL_TO_ARMS_EY          = 353,
+    HOLIDAY_BREWFEST                 = 372,
+    HOLIDAY_DARKMOON_FAIRE_ELWYNN    = 374,
+    HOLIDAY_DARKMOON_FAIRE_THUNDER   = 375,
+    HOLIDAY_DARKMOON_FAIRE_SHATTRATH = 376,
+};
+
 enum ReputationRank
 {
     REP_HATED       = 0,
@@ -852,7 +890,7 @@ enum Targets
     TARGET_DST_TARGET_ENEMY            = 53, // set unit coordinates as dest, only 16 target B imlemented
     TARGET_UNIT_CONE_ENEMY_UNKNOWN     = 54, // 180 degree, or different angle
     TARGET_DEST_CASTER_FRONT_LEAP      = 55, // for a leap spell
-    TARGET_UNIT_RAID_CASTER                   = 56,
+    TARGET_UNIT_RAID_CASTER            = 56,
     TARGET_UNIT_TARGET_RAID            = 57,
     TARGET_UNIT_NEARBY_RAID            = 58,
     TARGET_UNIT_CONE_ALLY              = 59,
@@ -861,7 +899,7 @@ enum Targets
     TARGET_TEST                        = 62, // for a test spell
     TARGET_DEST_TARGET_ANY             = 63,
     TARGET_DEST_TARGET_FRONT           = 64,
-    TARGET_DEST_TARGET_BACK            = 65,                // uses in teleport behind spells
+    TARGET_DEST_TARGET_BACK            = 65, // uses in teleport behind spells
     TARGET_DEST_TARGET_RIGHT           = 66,
     TARGET_DEST_TARGET_LEFT            = 67,
     TARGET_DEST_TARGET_FRONT_LEFT      = 68,

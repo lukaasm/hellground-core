@@ -155,6 +155,9 @@ class TRINITY_DLL_SPEC CreatureAI : public UnitAI
         virtual void ReceiveEmote(Player* pPlayer, uint32 text_emote) {}
         virtual void ReceiveScriptText(WorldObject *pSource, int32 iTextEntry) {}
 
+        // called when the corpse of this creature gets removed
+        virtual void CorpseRemoved(uint32 & /*respawnDelay*/) {}
+
         ///== Triggered Actions Requested ==================
  
         // Called when creature attack expected (if creature can and no have current victim)

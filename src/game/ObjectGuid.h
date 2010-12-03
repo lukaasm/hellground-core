@@ -181,6 +181,10 @@ class TRINITY_DLL_SPEC ObjectGuid
         }
 
     public:                                                 // accessors - for debug
+        bool operator== (ObjectGuid const& guid) const { return GetRawValue() == guid.GetRawValue(); }
+        bool operator!= (ObjectGuid const& guid) const { return GetRawValue() != guid.GetRawValue(); }
+        bool operator< (ObjectGuid const& guid) const { return GetRawValue() < guid.GetRawValue(); }
+
         char const* GetTypeName() const;
         std::string GetString() const;
     private:                                                // internal functions
