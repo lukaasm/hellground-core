@@ -1882,6 +1882,70 @@ switch (action)
     player->CLOSE_GOSSIP_MENU();
     return true;
 }
+enum
+{
+    SPELL_SPIRIT_HEAL_CHANNEL       = 22011,                // Spirit Heal Channel
+
+    SPELL_SPIRIT_HEAL               = 22012,                // Spirit Heal
+    SPELL_SPIRIT_HEAL_MANA          = 44535,                // in battlegrounds player get this no-mana-cost-buff
+
+    SPELL_WAITING_TO_RESURRECT      = 2584                  // players who cancel this aura don't want a resurrection
+};
+
+struct TRINITY_DLL_DECL npc_spirit_guideAI : public ScriptedAI
+{
+    npc_spirit_guideAI(Creature* pCreature) : ScriptedAI(pCreature) {Reset();}
+
+    void Reset()
+    {
+    }
+
+    void UpdateAI(const uint32 uiDiff)
+    {
+        // auto cast the whole time this spell
+        if (!m_creature->m_currentSpells[CURRENT_CHANNELED_SPELL])
+            m_creature->CastSpell(m_creature, SPELL_SPIRIT_HEAL_CHANNEL, false);
+    }
+
+    void CorpseRemoved(uint32 &)
+    {
+        // TODO: would be better to cast a dummy spell
+        Map* pMap = m_creature->GetMap();
+
+        if (!pMap || !pMap->IsBattleGround())
+            return;
+
+        Map::PlayerList const &PlayerList = pMap->GetPlayers();
+
+        for(Map::PlayerList::const_iterator itr = PlayerList.begin(); itr != PlayerList.end(); ++itr)
+        {
+            Player* pPlayer = itr->getSource();
+            if (!pPlayer || !pPlayer->IsWithinDistInMap(m_creature, 20.0f) || !pPlayer->HasAura(SPELL_WAITING_TO_RESURRECT, 0))
+                continue;
+
+            // repop player again - now this node won't be counted and another node is searched
+            pPlayer->RepopAtGraveyard();
+        }
+    }
+
+    void SpellHitTarget (Unit* pUnit, const SpellEntry* pSpellEntry)
+    {
+        if (pSpellEntry->Id == SPELL_SPIRIT_HEAL && pUnit->GetTypeId() == TYPEID_PLAYER
+            && pUnit->HasAura(SPELL_WAITING_TO_RESURRECT, 0))
+            pUnit->CastSpell(pUnit, SPELL_SPIRIT_HEAL_MANA, true);
+    }
+};
+
+bool GossipHello_npc_spirit_guide(Player* pPlayer, Creature* pCreature)
+{
+    pPlayer->CastSpell(pPlayer, SPELL_WAITING_TO_RESURRECT, true);
+    return true;
+}
+
+CreatureAI* GetAI_npc_spirit_guide(Creature* pCreature)
+{
+    return new npc_spirit_guideAI(pCreature);
+}
 
 void AddSC_npcs_special()
 {
@@ -1996,6 +2060,12 @@ void AddSC_npcs_special()
     newscript->Name="npc_master_omarion";
     newscript->pGossipHello =  &GossipHello_npc_master_omarion;
     newscript->pGossipSelect = &GossipSelect_npc_master_omarion;
+    newscript->RegisterSelf();
+
+    newscript = new Script;
+    newscript->Name = "npc_spirit_guide";
+    newscript->GetAI = &GetAI_npc_spirit_guide;
+    newscript->pGossipHello = &GossipHello_npc_spirit_guide;
     newscript->RegisterSelf();
 }
 

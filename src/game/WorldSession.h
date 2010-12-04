@@ -27,6 +27,8 @@
 
 #include "Common.h"
 #include "QueryResult.h"
+#include "ObjectGuid.h"
+#include "Battleground.h"
 
 class MailItemsInfo;
 struct ItemPrototype;
@@ -192,7 +194,7 @@ class TRINITY_DLL_SPEC WorldSession
 
         void SendAttackStop(Unit const* enemy);
 
-        void SendBattlegGroundList( uint64 guid, uint32 bgTypeId );
+        void SendBattleGroundList(ObjectGuid guid, BattleGroundTypeId bgTypeId);
 
         void SendTradeStatus(uint32 status);
         void SendCancelTrade();
@@ -380,7 +382,7 @@ class TRINITY_DLL_SPEC WorldSession
         void HandleRequestRaidInfoOpcode( WorldPacket & recv_data );
 
         void HandleBattlefieldStatusOpcode(WorldPacket &recv_data);
-        void HandleBattleMasterHelloOpcode(WorldPacket &recv_data);
+        void HandleBattlemasterHelloOpcode(WorldPacket &recv_data);
 
         void HandleGroupInviteOpcode(WorldPacket& recvPacket);
         //void HandleGroupCancelOpcode(WorldPacket& recvPacket);

@@ -33,6 +33,7 @@
 #include "Player.h"
 #include "Unit.h"
 #include "CreatureAI.h"
+#include "BattleGroundMgr.h"
 
 class Player;
 //class Map;
@@ -241,7 +242,7 @@ namespace Trinity
     };
 
     template<class Do>
-        struct TRINITY_DLL_DECL WorldObjectWorker
+    struct TRINITY_DLL_DECL WorldObjectWorker
     {
         Do const& i_do;
 
@@ -499,8 +500,32 @@ namespace Trinity
     {
         public:
             RespawnDo() {}
-            void operator()(Creature* u) const { u->Respawn(); }
-            void operator()(GameObject* u) const { u->Respawn(); }
+            void operator()(Creature* u) const
+            {
+                // prevent respawn creatures for not active BG event
+                Map* map = u->GetMap();
+                if (map->IsBattleGroundOrArena())
+                {
+                    BattleGroundEventIdx eventId = sBattleGroundMgr.GetCreatureEventIndex(u->GetDBTableGUIDLow());
+                    if (!((BattleGroundMap*)map)->GetBG()->IsActiveEvent(eventId.event1, eventId.event2))
+                        return;
+                }
+
+                u->Respawn();
+            }
+            void operator()(GameObject* u) const
+            {
+                // prevent respawn gameobject for not active BG event
+                Map* map = u->GetMap();
+                if (map->IsBattleGroundOrArena())
+                {
+                    BattleGroundEventIdx eventId = sBattleGroundMgr.GetGameObjectEventIndex(u->GetDBTableGUIDLow());
+                    if (!((BattleGroundMap*)map)->GetBG()->IsActiveEvent(eventId.event1, eventId.event2))
+                        return;
+                }
+
+                u->Respawn();
+            }
             void operator()(WorldObject*) const {}
             void operator()(Corpse*) const {}
     };
@@ -1029,6 +1054,46 @@ namespace Trinity
     private:
         Unit const* i_obj;
         float i_range;
+    };
+    // Prepare using Builder localized packets with caching and send to player
+    template<class Builder>
+    class LocalizedPacketDo
+    {
+        public:
+            explicit LocalizedPacketDo(Builder& builder) : i_builder(builder) {}
+
+            ~LocalizedPacketDo()
+            {
+                for(size_t i = 0; i < i_data_cache.size(); ++i)
+                    delete i_data_cache[i];
+            }
+            void operator()( Player* p );
+
+        private:
+            Builder& i_builder;
+            std::vector<WorldPacket*> i_data_cache;         // 0 = default, i => i-1 locale index
+    };
+
+    // Prepare using Builder localized packets with caching and send to player
+    template<class Builder>
+    class LocalizedPacketListDo
+    {
+        public:
+            typedef std::vector<WorldPacket*> WorldPacketList;
+            explicit LocalizedPacketListDo(Builder& builder) : i_builder(builder) {}
+
+            ~LocalizedPacketListDo()
+            {
+                for(size_t i = 0; i < i_data_cache.size(); ++i)
+                    for(size_t j = 0; j < i_data_cache[i].size(); ++j)
+                        delete i_data_cache[i][j];
+            }
+            void operator()( Player* p );
+
+        private:
+            Builder& i_builder;
+            std::vector<WorldPacketList> i_data_cache;
+                                                            // 0 = default, i => i-1 locale index
     };
 
     #ifndef WIN32

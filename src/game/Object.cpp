@@ -1104,12 +1104,17 @@ void WorldObject::_Create( uint32 guidlow, HighGuid guidhigh, uint32 mapid )
 
 uint32 WorldObject::GetZoneId() const
 {
-    return GetBaseMap()->GetZoneId(m_positionX, m_positionY, m_positionZ);
+    return GetMap()->GetZoneId(m_positionX, m_positionY, m_positionZ);
 }
 
 uint32 WorldObject::GetAreaId() const
 {
-    return GetBaseMap()->GetAreaId(m_positionX, m_positionY, m_positionZ);
+    return GetMap()->GetAreaId(m_positionX, m_positionY, m_positionZ);
+}
+
+void WorldObject::GetZoneAndAreaId(uint32& zoneid, uint32& areaid) const
+{
+    GetMap()->GetZoneAndAreaId(zoneid, areaid, m_positionX, m_positionY, m_positionZ);
 }
 
 InstanceData* WorldObject::GetInstanceData()
@@ -1201,6 +1206,19 @@ float WorldObject::GetDistanceZ(const WorldObject* obj) const
     float sizefactor = GetObjectSize() + obj->GetObjectSize();
     float dist = dz - sizefactor;
     return ( dist > 0 ? dist : 0);
+}
+
+bool WorldObject::IsWithinDist3d(float x, float y, float z, float dist2compare) const
+{
+    float dx = GetPositionX() - x;
+    float dy = GetPositionY() - y;
+    float dz = GetPositionZ() - z;
+    float distsq = dx*dx + dy*dy + dz*dz;
+
+    float sizefactor = GetObjectBoundingRadius();
+    float maxdist = dist2compare + sizefactor;
+
+    return distsq < maxdist * maxdist;
 }
 
 bool WorldObject::_IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D) const
@@ -1715,6 +1733,14 @@ void WorldObject::SendObjectDeSpawnAnim(uint64 guid)
 {
     WorldPacket data(SMSG_GAMEOBJECT_DESPAWN_ANIM, 8);
     data << guid;
+    SendMessageToSet(&data, true);
+}
+
+void WorldObject::SendGameObjectCustomAnim(uint64 guid)
+{
+    WorldPacket data(SMSG_GAMEOBJECT_CUSTOM_ANIM, 8+4);
+    data << uint64(guid);
+    data << uint32(0);                                      // not known what this is
     SendMessageToSet(&data, true);
 }
 

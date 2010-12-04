@@ -253,8 +253,10 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             if (ChatHandler(this).ContainsNotAllowedSigns(msg))
                 return;
 
-            Group *group = GetPlayer()->GetGroup();
-            if(!group)
+            // if player is in battleground, he cannot say to battleground members by /p
+            Group *group = GetPlayer()->GetOriginalGroup();
+            // so if player hasn't OriginalGroup and his player->GetGroup() is BG raid, then return
+            if( !group && (!(group = GetPlayer()->GetGroup()) || group->isBGGroup()) )
                 return;
 
             WorldPacket data;
@@ -343,8 +345,10 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             if (ChatHandler(this).ContainsNotAllowedSigns(msg))
                 return;
 
-            Group *group = GetPlayer()->GetGroup();
-            if(!group || !group->isRaidGroup() || group->isBGGroup())
+            // if player is in battleground, he cannot say to battleground members by /ra
+            Group *group = GetPlayer()->GetOriginalGroup();
+            // so if player hasn't OriginalGroup and his player->GetGroup() is BG raid or his group isn't raid, then return
+            if( !group && !(group = GetPlayer()->GetGroup()) || group->isBGGroup() || !group->isRaidGroup() )
                 return;
 
             WorldPacket data;
@@ -372,9 +376,10 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             if (ChatHandler(this).ContainsNotAllowedSigns(msg))
                 return;
 
-            Group *group = GetPlayer()->GetGroup();
-            if(!group || !group->isRaidGroup() || !group->IsLeader(GetPlayer()->GetGUID()) || group->isBGGroup())
-                return;
+            // if player is in battleground, he cannot say to battleground members by /ra
+            Group *group = GetPlayer()->GetOriginalGroup();
+            if (!group && !(group = GetPlayer()->GetGroup()) || group->isBGGroup() || !group->isRaidGroup())
+                 return;
 
             WorldPacket data;
             ChatHandler::FillMessageData(&data, this, CHAT_MSG_RAID_LEADER, lang, "", 0, msg.c_str(),NULL);
@@ -414,7 +419,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
                 break;
 
             Group *group = GetPlayer()->GetGroup();
-            if(!group || !group->isRaidGroup() || !group->isBGGroup())
+            if(!group || !group->isBGGroup())
                 return;
 
             WorldPacket data;
@@ -435,7 +440,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
                 break;
 
             Group *group = GetPlayer()->GetGroup();
-            if(!group || !group->isRaidGroup() || !group->IsLeader(GetPlayer()->GetGUID()) || !group->isBGGroup())
+            if(!group || !group->IsLeader(GetPlayer()->GetGUID()) || !group->isBGGroup())
                 return;
 
             WorldPacket data;

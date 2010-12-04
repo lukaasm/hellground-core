@@ -1173,8 +1173,15 @@ void Spell::DoSpellHitOnUnit(Unit *unit, const uint32 effectMask)
             HandleEffects(unit,NULL,NULL,effectNumber/*,m_damageMultipliers[effectNumber]*/);
     }
 
-    if(unit->GetTypeId() == TYPEID_UNIT && ((Creature*)unit)->IsAIEnabled)
-        ((Creature*)unit)->AI()->SpellHit(m_caster, m_spellInfo);
+    if (unit->GetTypeId() == TYPEID_UNIT)
+    {
+        if(((Creature*)unit)->IsAIEnabled)
+            ((Creature*)unit)->AI()->SpellHit(m_caster, m_spellInfo);
+
+        if (!((Creature*)unit)->isPet() && !IsAutoRepeat() && !IsNextMeleeSwingSpell() && !IsChannelActive())
+            if (Player* p = m_caster->GetCharmerOrOwnerPlayerOrPlayerItself())
+                p->RewardPlayerAndGroupAtCast(unit, m_spellInfo->Id);
+    }
 
     if(m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->IsAIEnabled)
         ((Creature*)m_caster)->AI()->SpellHitTarget(unit, m_spellInfo);
@@ -1230,17 +1237,20 @@ void Spell::DoAllEffectOnTarget(GOTargetInfo *target)
         return;
 
     GameObject* go = m_caster->GetMap()->GetGameObject(target->targetGUID);
-    if(!go)
+    if (!go)
         return;
 
-    for(uint32 effectNumber=0;effectNumber<3;effectNumber++)
+    for (uint32 effectNumber=0;effectNumber<3;effectNumber++)
         if (effectMask & (1<<effectNumber))
             HandleEffects(NULL,NULL,go,effectNumber);
 
     // cast at creature (or GO) quest objectives update at successful cast finished (+channel finished)
     // ignore autorepeat/melee casts for speed (not exist quest for spells (hm... )
-    if( m_caster->GetTypeId() == TYPEID_PLAYER && !IsAutoRepeat() && !IsNextMeleeSwingSpell() && !IsChannelActive() )
-        ((Player*)m_caster)->CastedCreatureOrGO(go->GetEntry(),go->GetGUID(),m_spellInfo->Id);
+    if (!IsAutoRepeat() && !IsNextMeleeSwingSpell() && !IsChannelActive())
+    {
+        if (Player* p = m_caster->GetCharmerOrOwnerPlayerOrPlayerItself())
+            p->RewardPlayerAndGroupAtCast(go, m_spellInfo->Id);
+    }
 }
 
 void Spell::DoAllEffectOnTarget(ItemTargetInfo *target)
@@ -2812,45 +2822,48 @@ void Spell::update(uint32 difftime)
                 // channeled spell processed independently for quest targeting
                 // cast at creature (or GO) quest objectives update at successful cast channel finished
                 // ignore autorepeat/melee casts for speed (not exist quest for spells (hm... )
-                if( m_caster->GetTypeId() == TYPEID_PLAYER && !IsAutoRepeat() && !IsNextMeleeSwingSpell() )
+                if (!IsAutoRepeat() && !IsNextMeleeSwingSpell())
                 {
-                    for(std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin();ihit != m_UniqueTargetInfo.end();++ihit)
+                    if (Player* p = m_caster->GetCharmerOrOwnerPlayerOrPlayerItself())
                     {
-                        if (ihit->deleted)
-                            continue;
+                        for(std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin();ihit != m_UniqueTargetInfo.end();++ihit)
+                        {
+                            if (ihit->deleted)
+                                continue;
 
-                        TargetInfo* target = &*ihit;
-                        if(!IS_CREATURE_GUID(target->targetGUID))
-                            continue;
+                            TargetInfo* target = &*ihit;
+                            if(!IS_CREATURE_GUID(target->targetGUID))
+                                continue;
 
-                        Unit* unit = m_caster->GetGUID()==target->targetGUID ? m_caster : m_caster->GetMap()->GetUnit(target->targetGUID);
-                        if (unit==NULL)
-                            continue;
+                            Unit* unit = m_caster->GetGUID()==target->targetGUID ? m_caster : m_caster->GetMap()->GetUnit(target->targetGUID);
+                            if (unit==NULL)
+                                continue;
 
-                        ((Player*)m_caster)->CastedCreatureOrGO(unit->GetEntry(),unit->GetGUID(),m_spellInfo->Id);
-                    }
+                            p->RewardPlayerAndGroupAtCast(unit, m_spellInfo->Id);
+                        }
 
-                    for(std::list<GOTargetInfo>::iterator ihit= m_UniqueGOTargetInfo.begin();ihit != m_UniqueGOTargetInfo.end();++ihit)
-                    {
-                        if (ihit->deleted)
-                            continue;
+                        for(std::list<GOTargetInfo>::iterator ihit= m_UniqueGOTargetInfo.begin();ihit != m_UniqueGOTargetInfo.end();++ihit)
+                        {
+                            if (ihit->deleted)
+                                continue;
 
-                        GOTargetInfo* target = &*ihit;
+                            GOTargetInfo* target = &*ihit;
 
-                        GameObject* go = m_caster->GetMap()->GetGameObject(target->targetGUID);
-                        if(!go)
-                            continue;
+                            GameObject* go = m_caster->GetMap()->GetGameObject(target->targetGUID);
+                            if(!go)
+                                continue;
 
-                        ((Player*)m_caster)->CastedCreatureOrGO(go->GetEntry(),go->GetGUID(),m_spellInfo->Id);
+                            p->RewardPlayerAndGroupAtCast(go, m_spellInfo->Id);
+                        }
                     }
                 }
 
                 finish();
             }
-        } break;
+        }
+        break;
         default:
-        {
-        }break;
+        break;
     }
 }
 
@@ -3640,8 +3653,11 @@ uint8 Spell::CanCast(bool strict)
     if(target)
     {
         // target state requirements (not allowed state), apply to self also
-        if(m_spellInfo->TargetAuraStateNot && target->HasAuraState(AuraState(m_spellInfo->TargetAuraStateNot)))
+        if (m_spellInfo->TargetAuraStateNot && target->HasAuraState(AuraState(m_spellInfo->TargetAuraStateNot)))
             return SPELL_FAILED_TARGET_AURASTATE;
+
+        if (!m_IsTriggeredSpell && IsDeathOnlySpell(m_spellInfo) && target->isAlive())
+            return SPELL_FAILED_TARGET_NOT_DEAD;
 
         if(target != m_caster)
         {
@@ -3759,7 +3775,11 @@ uint8 Spell::CanCast(bool strict)
                 return SPELL_FAILED_NOT_IN_ARENA;
 
     // zone check
-    if(!IsSpellAllowedInLocation(m_spellInfo,m_caster->GetMapId(),m_caster->GetZoneId(),m_caster->GetAreaId()))
+    uint32 zone, area;
+    m_caster->GetZoneAndAreaId(zone, area);
+
+    // zone check
+    if(!IsSpellAllowedInLocation(m_spellInfo,m_caster->GetMapId(), zone, area))
         return SPELL_FAILED_REQUIRES_AREA;
 
     // not let players cast spells at mount (and let do it to creatures)
@@ -3808,14 +3828,14 @@ uint8 Spell::CanCast(bool strict)
 
                             if(i_spellST->second.targetEntry)
                             {
-                                CellPair p(MaNGOS::ComputeCellPair(m_caster->GetPositionX(), m_caster->GetPositionY()));
+                                CellPair p(Trinity::ComputeCellPair(m_caster->GetPositionX(), m_caster->GetPositionY()));
                                 Cell cell(p);
                                 cell.data.Part.reserved = ALL_DISTRICT;
 
-                                MaNGOS::NearestGameObjectEntryInObjectRangeCheck go_check(*m_caster,i_spellST->second.targetEntry,range);
-                                MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck> checker(p_GameObject,go_check);
+                                Trinity::NearestGameObjectEntryInObjectRangeCheck go_check(*m_caster,i_spellST->second.targetEntry,range);
+                                Trinity::GameObjectLastSearcher<Trinity::NearestGameObjectEntryInObjectRangeCheck> checker(p_GameObject,go_check);
 
-                                TypeContainerVisitor<MaNGOS::GameObjectLastSearcher<MaNGOS::NearestGameObjectEntryInObjectRangeCheck>, GridTypeMapContainer > object_checker(checker);
+                                TypeContainerVisitor<Trinity::GameObjectLastSearcher<Trinity::NearestGameObjectEntryInObjectRangeCheck>, GridTypeMapContainer > object_checker(checker);
                                 CellLock<GridReadGuard> cell_lock(cell, p);
                                 cell_lock->Visit(cell_lock, object_checker, *m_caster->GetMap());
 
@@ -3845,15 +3865,15 @@ uint8 Spell::CanCast(bool strict)
                         {
                             Creature *p_Creature = NULL;
 
-                            CellPair p(MaNGOS::ComputeCellPair(m_caster->GetPositionX(), m_caster->GetPositionY()));
+                            CellPair p(Trinity::ComputeCellPair(m_caster->GetPositionX(), m_caster->GetPositionY()));
                             Cell cell(p);
                             cell.data.Part.reserved = ALL_DISTRICT;
                             cell.SetNoCreate();             // Really don't know what is that???
 
-                            MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*m_caster,i_spellST->second.targetEntry,i_spellST->second.type!=SPELL_TARGET_TYPE_DEAD,range);
-                            MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(p_Creature, u_check);
+                            Trinity::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*m_caster,i_spellST->second.targetEntry,i_spellST->second.type!=SPELL_TARGET_TYPE_DEAD,range);
+                            Trinity::CreatureLastSearcher<Trinity::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(p_Creature, u_check);
 
-                            TypeContainerVisitor<MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck>, GridTypeMapContainer >  grid_creature_searcher(searcher);
+                            TypeContainerVisitor<Trinity::CreatureLastSearcher<Trinity::NearestCreatureEntryWithLiveStateInObjectRangeCheck>, GridTypeMapContainer >  grid_creature_searcher(searcher);
 
                             CellLock<GridReadGuard> cell_lock(cell, p);
                             cell_lock->Visit(cell_lock, grid_creature_searcher, *m_caster->GetMap());
@@ -4106,8 +4126,8 @@ uint8 Spell::CanCast(bool strict)
                     return SPELL_FAILED_BAD_TARGETS;
 
                 // In BattleGround players can use only flags and banners
-                if( ((Player*)m_caster)->InBattleGround() &&
-                    !((Player*)m_caster)->isAllowUseBattleGroundObject() )
+                if(((Player*)m_caster)->InBattleGround() &&
+                    !((Player*)m_caster)->CanUseBattleGroundObject())
                     return SPELL_FAILED_TRY_AGAIN;
 
                 // get the lock entry

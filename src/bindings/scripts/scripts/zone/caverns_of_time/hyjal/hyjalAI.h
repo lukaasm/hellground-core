@@ -188,7 +188,6 @@ struct TRINITY_DLL_DECL hyjalAI : public npc_escortAI
     void JustSummoned(Creature *summoned);
     void SummonedCreatureDespawn(Creature* summoned);
     void HideNearPos(float x, float y);
-    void RespawnNearPos(float x, float y);
     void WaypointReached(uint32 i);
     void DoOverrun(uint32 faction, const uint32 diff);
     void MoveInLineOfSight(Unit *who);

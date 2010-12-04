@@ -33,7 +33,7 @@ inline void
 Trinity::ObjectUpdater::Visit(CreatureMapType &m)
 {
     for(CreatureMapType::iterator iter=m.begin(); iter != m.end(); ++iter)
-        if(iter->getSource()->IsInWorld() && !iter->getSource()->isSpiritService())
+        if(iter->getSource()->IsInWorld())
             iter->getSource()->Update(i_timeDiff);
 }
 
@@ -533,6 +533,55 @@ void Trinity::PlayerSearcher<Check>::Visit(PlayerMapType &m)
             return;
         }
     }
+}
+
+template<class Builder>
+void Trinity::LocalizedPacketDo<Builder>::operator()( Player* p )
+{
+    int32 loc_idx = p->GetSession()->GetSessionDbLocaleIndex();
+    uint32 cache_idx = loc_idx+1;
+    WorldPacket* data;
+
+    // create if not cached yet
+    if (i_data_cache.size() < cache_idx+1 || !i_data_cache[cache_idx])
+    {
+        if (i_data_cache.size() < cache_idx+1)
+            i_data_cache.resize(cache_idx+1);
+
+        data = new WorldPacket(SMSG_MESSAGECHAT, 200);
+
+        i_builder(*data, loc_idx);
+
+        i_data_cache[cache_idx] = data;
+    }
+    else
+        data = i_data_cache[cache_idx];
+
+    p->SendDirectMessage(data);
+}
+
+template<class Builder>
+void Trinity::LocalizedPacketListDo<Builder>::operator()( Player* p )
+{
+    int32 loc_idx = p->GetSession()->GetSessionDbLocaleIndex();
+    uint32 cache_idx = loc_idx+1;
+    WorldPacketList* data_list;
+
+    // create if not cached yet
+    if (i_data_cache.size() < cache_idx+1 || i_data_cache[cache_idx].empty())
+    {
+        if (i_data_cache.size() < cache_idx+1)
+            i_data_cache.resize(cache_idx+1);
+
+        data_list = &i_data_cache[cache_idx];
+
+        i_builder(*data_list, loc_idx);
+    }
+    else
+        data_list = &i_data_cache[cache_idx];
+
+    for(size_t i = 0; i < data_list->size(); ++i)
+        p->SendDirectMessage((*data_list)[i]);
 }
 
 #endif                                                      // TRINITY_GRIDNOTIFIERSIMPL_H

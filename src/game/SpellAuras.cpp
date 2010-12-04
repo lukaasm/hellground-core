@@ -2385,14 +2385,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
         // AT REMOVE
         switch(GetId())
         {
-            case 2584:          // Waiting to Resurrect
-            {
-                // Waiting to resurrect spell cancel, we must remove player from resurrect queue
-                if(m_target->GetTypeId() == TYPEID_PLAYER)
-                    if(BattleGround *bg = ((Player*)m_target)->GetBattleGround())
-                        bg->RemovePlayerFromResurrectQueue(m_target->GetGUID());
-                return;
-            }
             case 28169:        // Mutating Injection
             {
                 // Mutagen Explosion
@@ -6173,9 +6165,6 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
 
 void Aura::PeriodicTick()
 {
-    if (!m_target->isAlive())
-        return;
-
     if (GetId() == 38575 && m_tickNumber < 3)  // Toxic - Spores delay deal damage
         return;
 

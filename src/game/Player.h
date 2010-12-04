@@ -30,12 +30,13 @@
 #include "NPCHandler.h"
 #include "QuestDef.h"
 #include "Group.h"
+#include "Battleground.h"
 #include "Object.h"
 #include "Bag.h"
 #include "WorldSession.h"
 #include "Pet.h"
 #include "MapReference.h"
-#include "Util.h"                                           // for Tokens typedef
+#include "Util.h"           // for Tokens typedef
 
 #include "SpellMgr.h"       // for GetSpellBaseCastTime
 
@@ -58,6 +59,17 @@ typedef std::deque<Mail*> PlayerMails;
 
 #define PLAYER_MAX_SKILLS       127
 #define PLAYER_MAX_DAILY_QUESTS 25
+
+enum ArenaTeamInfoType
+{
+    ARENA_TEAM_ID               = 0,
+    ARENA_TEAM_MEMBER           = 1,                        // 0 - captain, 1 - member
+    ARENA_TEAM_GAMES_WEEK       = 2,
+    ARENA_TEAM_GAMES_SEASON     = 3,
+    ARENA_TEAM_WINS_SEASON      = 4,
+    ARENA_TEAM_PERSONAL_RATING  = 5,
+    ARENA_TEAM_END              = 6
+};
 
 // Note: SPELLMOD_* values is aura types in fact
 enum SpellModType
@@ -1508,7 +1520,7 @@ class TRINITY_DLL_SPEC Player : public Unit
 
         PvPInfo pvpInfo;
         void UpdatePvP(bool state, bool ovrride=false);
-        void UpdateZone(uint32 newZone);
+        void UpdateZone(uint32, uint32);
         void UpdateArea(uint32 newArea);
 
         void UpdatePvpTitles();
@@ -1551,11 +1563,18 @@ class TRINITY_DLL_SPEC Player : public Unit
         int GetGuildIdInvited() { return m_GuildIdInvited; }
         static void RemovePetitionsAndSigns(uint64 guid, uint32 type);
 
-        // Arena Team
         void SetInArenaTeam(uint32 ArenaTeamId, uint8 slot)
         {
-            SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * 6), ArenaTeamId);
+            SetArenaTeamInfoField(slot, ARENA_TEAM_ID, ArenaTeamId);
         }
+        void SetArenaTeamInfoField(uint8 slot, ArenaTeamInfoType type, uint32 value)
+        {
+            SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + type, value);
+        }
+
+        bool CanCaptureTowerPoint();
+
+        uint32 GetArenaPersonalRating(uint8 slot) { return GetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + ARENA_TEAM_PERSONAL_RATING); }
         uint32 GetArenaTeamId(uint8 slot) { return GetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * 6)); }
         static uint32 GetArenaTeamIdFromDB(uint64 guid, uint8 slot);
         void SetArenaTeamIdInvited(uint32 ArenaTeamId) { m_ArenaTeamIdInvited = ArenaTeamId; }
@@ -1718,6 +1737,7 @@ class TRINITY_DLL_SPEC Player : public Unit
         bool IsAtGroupRewardDistance(WorldObject const* pRewardSource) const;
         bool RewardPlayerAndGroupAtKill(Unit* pVictim);
         void RewardPlayerAndGroupAtEvent(uint32 creature_id,WorldObject* pRewardSource);
+        void RewardPlayerAndGroupAtCast(WorldObject* pRewardSource, uint32 spellid);
 
         FactionStateList m_factions;
         ForcedReactions m_forcedReactions;
@@ -1818,7 +1838,7 @@ class TRINITY_DLL_SPEC Player : public Unit
         void CastItemCombatSpell(Unit *target, WeaponAttackType attType, uint32 procVictim, uint32 procEx, SpellEntry const *spellInfo = NULL);
         void CastItemCombatSpell(Unit *target, WeaponAttackType attType, uint32 procVictim, uint32 procEx, Item *item, ItemPrototype const * proto, SpellEntry const *spell = NULL);
 
-        void SendInitWorldStates(bool force = false, uint32 forceZoneId = 0);
+        void SendInitWorldStates(uint32 zone, uint32 area);
         void SendUpdateWorldState(uint32 Field, uint32 Value);
         void SendDirectMessage(WorldPacket *data);
 
@@ -1838,6 +1858,7 @@ class TRINITY_DLL_SPEC Player : public Unit
 
         bool InBattleGround() const { return m_bgBattleGroundID != 0; }
         uint32 GetBattleGroundId() const    { return m_bgBattleGroundID; }
+        BattleGroundTypeId GetBattleGroundTypeId() const { return m_bgTypeID; }
         BattleGround* GetBattleGround() const;
         bool InArena() const;
 
@@ -1848,39 +1869,43 @@ class TRINITY_DLL_SPEC Player : public Unit
         bool InBattleGroundQueue() const
         {
             for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
-                if (m_bgBattleGroundQueueID[i].bgQueueType != 0)
+                if (m_bgBattleGroundQueueID[i].bgQueueTypeId != 0)
                     return true;
             return false;
         }
 
-        uint32 GetBattleGroundQueueId(uint32 index) const { return m_bgBattleGroundQueueID[index].bgQueueType; }
-        uint32 GetBattleGroundQueueIndex(uint32 bgQueueType) const
+        BattleGroundQueueTypeId GetBattleGroundQueueTypeId(uint32 index) const { return m_bgBattleGroundQueueID[index].bgQueueTypeId; }
+        uint32 GetBattleGroundQueueIndex(BattleGroundQueueTypeId bgQueueTypeId) const
         {
-            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
-                if (m_bgBattleGroundQueueID[i].bgQueueType == bgQueueType)
+            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
+                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == bgQueueTypeId)
                     return i;
             return PLAYER_MAX_BATTLEGROUND_QUEUES;
         }
-        bool IsInvitedForBattleGroundQueueType(uint32 bgQueueType) const
+        bool IsInvitedForBattleGroundQueueType(BattleGroundQueueTypeId bgQueueTypeId) const
         {
-            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
-                if (m_bgBattleGroundQueueID[i].bgQueueType == bgQueueType)
+            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
+                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == bgQueueTypeId)
                     return m_bgBattleGroundQueueID[i].invitedToInstance != 0;
-            return PLAYER_MAX_BATTLEGROUND_QUEUES;
+            return false;
         }
-        bool InBattleGroundQueueForBattleGroundQueueType(uint32 bgQueueType) const
+        bool InBattleGroundQueueForBattleGroundQueueType(BattleGroundQueueTypeId bgQueueTypeId) const
         {
-            return GetBattleGroundQueueIndex(bgQueueType) < PLAYER_MAX_BATTLEGROUND_QUEUES;
+            return GetBattleGroundQueueIndex(bgQueueTypeId) < PLAYER_MAX_BATTLEGROUND_QUEUES;
         }
 
-        void SetBattleGroundId(uint32 val)  { m_bgBattleGroundID = val; }
-        uint32 AddBattleGroundQueueId(uint32 val)
+        void SetBattleGroundId(uint32 val, BattleGroundTypeId bgTypeId)
         {
-            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
+            m_bgBattleGroundID = val;
+            m_bgTypeID = bgTypeId;
+        }
+        uint32 AddBattleGroundQueueId(BattleGroundQueueTypeId val)
+        {
+            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
             {
-                if (m_bgBattleGroundQueueID[i].bgQueueType == 0 || m_bgBattleGroundQueueID[i].bgQueueType == val)
+                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == BATTLEGROUND_QUEUE_NONE || m_bgBattleGroundQueueID[i].bgQueueTypeId == val)
                 {
-                    m_bgBattleGroundQueueID[i].bgQueueType = val;
+                    m_bgBattleGroundQueueID[i].bgQueueTypeId = val;
                     m_bgBattleGroundQueueID[i].invitedToInstance = 0;
                     return i;
                 }
@@ -1889,32 +1914,32 @@ class TRINITY_DLL_SPEC Player : public Unit
         }
         bool HasFreeBattleGroundQueueId()
         {
-            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
-                if (m_bgBattleGroundQueueID[i].bgQueueType == 0)
+            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
+                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == BATTLEGROUND_QUEUE_NONE)
                     return true;
             return false;
         }
-        void RemoveBattleGroundQueueId(uint32 val)
+        void RemoveBattleGroundQueueId(BattleGroundQueueTypeId val)
         {
-            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
+            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
             {
-                if (m_bgBattleGroundQueueID[i].bgQueueType == val)
+                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == val)
                 {
-                    m_bgBattleGroundQueueID[i].bgQueueType = 0;
+                    m_bgBattleGroundQueueID[i].bgQueueTypeId = BATTLEGROUND_QUEUE_NONE;
                     m_bgBattleGroundQueueID[i].invitedToInstance = 0;
                     return;
                 }
             }
         }
-        void SetInviteForBattleGroundQueueType(uint32 bgQueueType, uint32 instanceId)
+        void SetInviteForBattleGroundQueueType(BattleGroundQueueTypeId bgQueueTypeId, uint32 instanceId)
         {
-            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
-                if (m_bgBattleGroundQueueID[i].bgQueueType == bgQueueType)
+            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
+                if (m_bgBattleGroundQueueID[i].bgQueueTypeId == bgQueueTypeId)
                     m_bgBattleGroundQueueID[i].invitedToInstance = instanceId;
         }
         bool IsInvitedForBattleGroundInstance(uint32 instanceId) const
         {
-            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; i++)
+            for (int i=0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
                 if (m_bgBattleGroundQueueID[i].invitedToInstance == instanceId)
                     return true;
             return false;
@@ -1924,6 +1949,15 @@ class TRINITY_DLL_SPEC Player : public Unit
         float GetBattleGroundEntryPointY() const { return m_bgEntryPointY; }
         float GetBattleGroundEntryPointZ() const { return m_bgEntryPointZ; }
         float GetBattleGroundEntryPointO() const { return m_bgEntryPointO; }
+        
+        void SetBattleGroundEntryPoint(Player* leader = NULL)
+        {
+            if (!leader)
+                leader = this;
+
+            SetBattleGroundEntryPoint(leader->GetMapId(),leader->GetPositionX(),leader->GetPositionY(),leader->GetPositionZ(),leader->GetOrientation());
+        }
+
         void SetBattleGroundEntryPoint(uint32 Map, float PosX, float PosY, float PosZ, float PosO )
         {
             m_bgEntryPointMap = Map;
@@ -1942,8 +1976,12 @@ class TRINITY_DLL_SPEC Player : public Unit
         void ReportedAfkBy(Player* reporter);
         void ClearAfkReports() { m_bgAfkReporter.clear(); }
 
-        bool GetBGAccessByLevel(uint32 bgTypeId) const;
-        bool isAllowUseBattleGroundObject();
+        BattleGroundBracketId GetBattleGroundBracketIdFromLevel(BattleGroundTypeId bgTypeId) const;
+        uint32 GetMinLevelForBattleGroundBracketId(BattleGroundBracketId bracket_id, BattleGroundTypeId bgTypeId);
+        uint32 GetMaxLevelForBattleGroundBracketId(BattleGroundBracketId bracket_id, BattleGroundTypeId bgTypeId);
+        
+        bool GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const;
+        bool CanUseBattleGroundObject();
         bool isTotalImmunity();
 
         /*********************************************************/
@@ -2046,6 +2084,7 @@ class TRINITY_DLL_SPEC Player : public Unit
 
         void UpdateVisibilityOf(WorldObject* target);
         void SendInitialVisiblePackets(Unit* target);
+        void SendCinematicStart(uint32 CinematicSequenceId);
 
         template<class T>
             void UpdateVisibilityOf(T* target, UpdateData& data, std::set<WorldObject*>& visibleNow);
@@ -2099,6 +2138,13 @@ class TRINITY_DLL_SPEC Player : public Unit
         /***                   GROUP SYSTEM                    ***/
         /*********************************************************/
 
+        void SetBattleGroundRaid(Group *group, int8 subgroup = -1);
+        void RemoveFromBattleGroundRaid();
+        Group * GetOriginalGroup() { return m_originalGroup.getTarget(); }
+        GroupReference& GetOriginalGroupRef() { return m_originalGroup; }
+        uint8 GetOriginalSubGroup() const { return m_originalGroup.getSubGroup(); }
+        void SetOriginalGroup(Group *group, int8 subgroup = -1);
+
         Group * GetGroupInvite() { return m_groupInvite; }
         void SetGroupInvite(Group *group) { m_groupInvite = group; }
         Group * GetGroup() { return m_group.getTarget(); }
@@ -2145,12 +2191,13 @@ class TRINITY_DLL_SPEC Player : public Unit
 
         /* this variable is set to bg->m_InstanceID, when player is teleported to BG - (it is battleground's GUID)*/
         uint32 m_bgBattleGroundID;
+        BattleGroundTypeId m_bgTypeID;
         /*
         this is an array of BG queues (BgTypeIDs) in which is player
         */
         struct BgBattleGroundQueueID_Rec
         {
-            uint32 bgQueueType;
+            BattleGroundQueueTypeId bgQueueTypeId;
             uint32 invitedToInstance;
         };
         BgBattleGroundQueueID_Rec m_bgBattleGroundQueueID[PLAYER_MAX_BATTLEGROUND_QUEUES];
@@ -2344,6 +2391,8 @@ class TRINITY_DLL_SPEC Player : public Unit
 
         // Groups
         GroupReference m_group;
+        GroupReference m_originalGroup;
+
         Group *m_groupInvite;
         uint32 m_groupUpdateMask;
         uint64 m_auraUpdateMask;

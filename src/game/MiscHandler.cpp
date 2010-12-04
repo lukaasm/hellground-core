@@ -467,23 +467,19 @@ void WorldSession::HandleTogglePvP( WorldPacket & recv_data )
 
 void WorldSession::HandleZoneUpdateOpcode( WorldPacket & recv_data )
 {
-    CHECK_PACKET_SIZE(recv_data,4);
-
     uint32 newZone;
     recv_data >> newZone;
 
     sLog.outDetail("WORLD: Recvd ZONE_UPDATE: %u", newZone);
 
-    GetPlayer()->UpdateZone(newZone);
-
-    GetPlayer()->SendInitWorldStates(true,newZone);
+    // use server size data
+    uint32 newzone, newarea;
+    GetPlayer()->GetZoneAndAreaId(newzone, newarea);
+    GetPlayer()->UpdateZone(newzone, newarea);
 }
 
 void WorldSession::HandleSetTargetOpcode( WorldPacket & recv_data )
 {
-    // When this packet send?
-    CHECK_PACKET_SIZE(recv_data,8);
-
     uint64 guid ;
     recv_data >> guid;
 

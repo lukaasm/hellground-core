@@ -867,6 +867,33 @@ bool GameObject::ActivateToQuest( Player *pTarget)const
     return false;
 }
 
+void GameObject::SummonLinkedTrapIfAny()
+{
+    uint32 linkedEntry = GetGOInfo()->GetLinkedGameObjectEntry();
+    if (!linkedEntry)
+        return;
+
+    GameObject* linkedGO = new GameObject;
+    if (!linkedGO->Create(objmgr.GenerateLowGuid(HIGHGUID_GAMEOBJECT), linkedEntry, GetMap(),
+         GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation(), 0.0f, 0.0f, 0.0f, 0.0f, GO_ANIMPROGRESS_DEFAULT, GO_STATE_READY))
+    {
+        delete linkedGO;
+        linkedGO = NULL;
+        return;
+    }
+
+    linkedGO->SetRespawnTime(GetRespawnDelay());
+    linkedGO->SetSpellId(GetSpellId());
+
+    if (GetOwnerGUID())
+    {
+        linkedGO->SetOwnerGUID(GetOwnerGUID());
+        linkedGO->SetUInt32Value(GAMEOBJECT_LEVEL, GetUInt32Value(GAMEOBJECT_LEVEL));
+    }
+
+    GetMap()->Add(linkedGO);
+}
+
 void GameObject::TriggeringLinkedGameObject( uint32 trapEntry, Unit* target)
 {
     GameObjectInfo const* trapInfo = sGOStorage.LookupEntry<GameObjectInfo>(trapEntry);
@@ -1282,7 +1309,7 @@ void GameObject::Use(Unit* user)
 
             Player* player = (Player*)user;
 
-            if (player->isAllowUseBattleGroundObject() )
+            if (player->CanUseBattleGroundObject())
             {
                 // in battleground check
                 BattleGround *bg = player->GetBattleGround();
@@ -1301,7 +1328,7 @@ void GameObject::Use(Unit* user)
 
             Player* player = (Player*)user;
 
-            if( player->isAllowUseBattleGroundObject() )
+            if( player->CanUseBattleGroundObject() )
             {
                 // in battleground check
                 BattleGround *bg = player->GetBattleGround();

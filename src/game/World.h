@@ -197,6 +197,8 @@ enum WorldConfigs
     CONFIG_ARENA_AUTO_DISTRIBUTE_POINTS,
     CONFIG_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS,
     CONFIG_BATTLEGROUND_PREMATURE_FINISH_TIMER,
+    CONFIG_BATTLEGROUND_INVITATION_TYPE,
+    CONFIG_BATTLEGROUND_PREMADE_GROUP_WAIT_FOR_MATCH,
 
     CONFIG_MAX_WHO,
     CONFIG_BG_START_MUSIC,
@@ -492,7 +494,7 @@ class World
         static void StopNow(uint8 exitcode) { m_stopEvent = true; m_ExitCode = exitcode; }
         static bool IsStopped() { return m_stopEvent; }
 
-        void Update(time_t diff);
+        void Update(uint32 diff);
 
         void UpdateSessions( time_t diff );
         /// Set a server rate (see #Rates)

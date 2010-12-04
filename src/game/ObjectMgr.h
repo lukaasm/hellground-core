@@ -328,7 +328,7 @@ class ObjectMgr
 
         ArenaTeam* GetArenaTeamById(const uint32 arenateamid) const;
         ArenaTeam* GetArenaTeamByName(const std::string& arenateamname) const;
-        ArenaTeam* GetArenaTeamByCaptain(uint64 const& guid) const;
+        ArenaTeam* GetArenaTeamByCaptain(ObjectGuid guid) const;
         void AddArenaTeam(ArenaTeam* arenaTeam);
         void RemoveArenaTeam(uint32 Id);
         ArenaTeamMap::iterator GetArenaTeamMapBegin() { return mArenaTeamMap.begin(); }
@@ -403,14 +403,6 @@ class ObjectMgr
         }
         bool IsTavernAreaTrigger(uint32 Trigger_ID) const { return mTavernAreaTriggerSet.count(Trigger_ID) != 0; }
         bool IsGameObjectForQuests(uint32 entry) const { return mGameObjectForQuestSet.count(entry) != 0; }
-
-        uint32 GetBattleMasterBG(uint32 entry) const
-        {
-            BattleMastersMap::const_iterator itr = mBattleMastersMap.find(entry);
-            if(itr != mBattleMastersMap.end())
-                return itr->second;
-            return 2;                                       //BATTLEGROUND_WS - i will not add include only for constant usage!
-        }
 
         void AddGossipText(GossipText *pGText);
         GossipText *GetGossipText(uint32 Text_ID);
@@ -522,7 +514,6 @@ class ObjectMgr
         void LoadQuestAreaTriggers();
         void LoadAreaTriggerScripts();
         void LoadTavernAreaTriggers();
-        void LoadBattleMastersEntry();
         void LoadGameObjectForQuests();
 
         void LoadItemTexts();

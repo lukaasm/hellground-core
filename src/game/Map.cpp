@@ -460,21 +460,21 @@ Map::Add(T *obj)
 
     assert(obj);
 
-    if(p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
+    if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
         sLog.outError("Map::Add: Object " UI64FMTD " have invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUID(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
         return;
     }
 
     Cell cell(p);
-    if(obj->IsInWorld()) // need some clean up later
+    if (obj->IsInWorld()) // need some clean up later
     {
         UpdateObjectVisibility(obj,cell,p); // is this needed?
         AddNotifier(obj);
         return;
     }
 
-    if(obj->isActiveObject())
+    if (obj->isActiveObject())
         EnsureGridLoaded(cell);
     else
         EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
@@ -491,7 +491,6 @@ Map::Add(T *obj)
     DEBUG_LOG("Object %u enters grid[%u,%u]", GUID_LOPART(obj->GetGUID()), cell.GridX(), cell.GridY());
 
     UpdateObjectVisibility(obj,cell,p);
-
     AddNotifier(obj);
 }
 
@@ -1526,7 +1525,7 @@ GridMapLiquidStatus Map::getLiquidStatus(float x, float y, float z, uint8 ReqLiq
     return result;
 }
 
-uint32 Map::GetAreaId(uint16 areaflag,uint32 map_id)
+uint32 Map::GetAreaIdByAreaFlag(uint16 areaflag,uint32 map_id)
 {
     AreaTableEntry const *entry = GetAreaEntryByAreaFlagAndMap(areaflag,map_id);
 
@@ -1536,15 +1535,24 @@ uint32 Map::GetAreaId(uint16 areaflag,uint32 map_id)
         return 0;
 }
 
-uint32 Map::GetZoneId(uint16 areaflag,uint32 map_id)
+uint32 Map::GetZoneIdByAreaFlag(uint16 areaflag,uint32 map_id)
 {
     AreaTableEntry const *entry = GetAreaEntryByAreaFlagAndMap(areaflag,map_id);
 
-    if( entry)
-        return ( entry->zone != 0) ? entry->zone : entry->ID;
+    if( entry )
+        return ( entry->zone != 0 ) ? entry->zone : entry->ID;
     else
         return 0;
 }
+
+void Map::GetZoneAndAreaIdByAreaFlag(uint32& zoneid, uint32& areaid, uint16 areaflag,uint32 map_id)
+{
+    AreaTableEntry const *entry = GetAreaEntryByAreaFlagAndMap(areaflag,map_id);
+
+    areaid = entry ? entry->ID : 0;
+    zoneid = entry ? (( entry->zone != 0 ) ? entry->zone : entry->ID) : 0;
+}
+
 
 bool Map::IsInWater(float x, float y, float pZ, GridMapLiquidData *data) const
 {
@@ -2874,7 +2882,6 @@ bool InstanceMap::Add(Player *player)
         // first player enters (no players yet)
         SetResetSchedule(false);
 
-        player->SendInitWorldStates();
         sLog.outDetail("MAP: Player '%s' entered the instance '%u' of map '%s'", player->GetName(), GetInstanceId(), GetMapName());
         // initialize unload state
         m_unloadTimer = 0;
@@ -3367,7 +3374,6 @@ void Map::RemoveFromCreatureGUIDList(Creature * obj)
     if (creatureIdToGuidMap.find(a, obj->GetEntry()))
         a->second.remove(obj->GetGUID());
 }
-
 
 void Map::InsertIntoObjMap(Object * obj)
 {

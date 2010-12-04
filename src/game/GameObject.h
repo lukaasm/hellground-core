@@ -34,6 +34,17 @@
 #pragma pack(push,1)
 #endif
 
+// client side GO show states
+enum GOState
+{
+    GO_STATE_ACTIVE             = 0,                        // show in world as used and not reset (closed door open)
+    GO_STATE_READY              = 1,                        // show in world as ready (closed door close)
+    GO_STATE_ACTIVE_ALTERNATIVE = 2                         // show in world as used in alt way and not reset (closed door open by cannon fire)
+};
+  
+#define MAX_GO_STATE              3
+#define GO_ANIMPROGRESS_DEFAULT 100 
+
 // from `gameobject_template`
 struct GameObjectInfo
 {
@@ -358,6 +369,17 @@ struct GameObjectInfo
         } raw;
     };
     uint32 ScriptId;
+    uint32 GetLinkedGameObjectEntry() const
+    {
+        switch(type)
+        {
+            case GAMEOBJECT_TYPE_BUTTON:      return button.linkedTrap;
+            case GAMEOBJECT_TYPE_CHEST:       return chest.linkedTrapId;
+            case GAMEOBJECT_TYPE_SPELL_FOCUS: return spellFocus.linkedTrapId;
+            case GAMEOBJECT_TYPE_GOOBER:      return goober.linkedTrapId;
+            default: return 0;
+        }
+    }
 };
 
 struct GameObjectLocale
@@ -574,6 +596,7 @@ class TRINITY_DLL_SPEC GameObject : public WorldObject
             return autoCloseTime / 0x10000;
         }
 
+        void SummonLinkedTrapIfAny();
         void TriggeringLinkedGameObject( uint32 trapEntry, Unit* target);
 
         bool isVisibleForInState(Player const* u, bool inVisibleList) const;

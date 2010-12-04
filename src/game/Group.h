@@ -28,8 +28,9 @@
 #include <map>
 #include <vector>
 
-#define MAXGROUPSIZE 5
-#define MAXRAIDSIZE 40
+#define MAX_GROUP_SIZE 5
+#define MAX_RAID_SIZE 40
+#define MAX_RAID_SUBGROUPS (MAX_RAID_SIZE / MAX_GROUP_SIZE)
 #define TARGETICONCOUNT 8
 
 enum RollVote
@@ -176,7 +177,7 @@ class TRINITY_DLL_SPEC Group
         void   Disband(bool hideDestroy=false);
 
         // properties accessories
-        bool IsFull() const { return (m_groupType==GROUPTYPE_NORMAL) ? (m_memberSlots.size()>=MAXGROUPSIZE) : (m_memberSlots.size()>=MAXRAIDSIZE); }
+        bool IsFull() const { return (m_groupType==GROUPTYPE_NORMAL) ? (m_memberSlots.size()>=MAX_GROUP_SIZE) : (m_memberSlots.size()>=MAX_RAID_SIZE); }
         bool isRaidGroup() const { return m_groupType==GROUPTYPE_RAID; }
         bool isBGGroup()   const { return m_bgGroup != NULL; }
         bool IsCreated()   const { return GetMembersCount() > 0; }
@@ -231,7 +232,7 @@ class TRINITY_DLL_SPEC Group
 
         bool HasFreeSlotSubGroup(uint8 subgroup) const
         {
-            return (m_subGroupsCounts && m_subGroupsCounts[subgroup] < MAXGROUPSIZE);
+            return (m_subGroupsCounts && m_subGroupsCounts[subgroup] < MAX_GROUP_SIZE);
         }
 
         bool SameSubGroup(Player const* member1, Player const* member2) const;
@@ -244,7 +245,7 @@ class TRINITY_DLL_SPEC Group
         {
             member_citerator mslot = _getMemberCSlot(guid);
             if(mslot==m_memberSlots.end())
-                return (MAXRAIDSIZE/MAXGROUPSIZE+1);
+                return (MAX_RAID_SIZE/MAX_GROUP_SIZE+1);
 
             return mslot->group;
         }
@@ -253,8 +254,7 @@ class TRINITY_DLL_SPEC Group
         void ConvertToRaid();
 
         void SetBattlegroundGroup(BattleGround *bg) { m_bgGroup = bg; }
-        uint32 CanJoinBattleGroundQueue(uint32 bgTypeId, uint32 bgQueueType, uint32 MinPlayerCount, uint32 MaxPlayerCount, bool isRated, uint32 arenaSlot);
-
+        uint32 CanJoinBattleGroundQueue(BattleGroundTypeId bgTypeId, BattleGroundQueueTypeId bgQueueTypeId, uint32 MinPlayerCount, uint32 MaxPlayerCount, bool isRated, uint32 arenaSlot);
         void ChangeMembersGroup(const uint64 &guid, const uint8 &group);
         void ChangeMembersGroup(Player *player, const uint8 &group);
 
@@ -292,7 +292,7 @@ class TRINITY_DLL_SPEC Group
         //void SendInit(WorldSession *session);
         void SendTargetIconList(WorldSession *session);
         void SendUpdate();
-        void Update(time_t diff);
+        void Update(uint32 diff);
         void UpdatePlayerOutOfRange(Player* pPlayer);
                                                             // ignore: GUID of player that will be ignored
         void BroadcastPacket(WorldPacket *packet, int group=-1, uint64 ignore=0);
@@ -356,9 +356,9 @@ class TRINITY_DLL_SPEC Group
         {
             // Sub group counters initialization
             if (!m_subGroupsCounts)
-                m_subGroupsCounts = new uint8[MAXRAIDSIZE / MAXGROUPSIZE];
+                m_subGroupsCounts = new uint8[MAX_RAID_SIZE / MAX_GROUP_SIZE];
 
-            memset((void*)m_subGroupsCounts, 0, (MAXRAIDSIZE / MAXGROUPSIZE)*sizeof(uint8));
+            memset((void*)m_subGroupsCounts, 0, (MAX_RAID_SIZE / MAX_GROUP_SIZE)*sizeof(uint8));
 
             for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
                 ++m_subGroupsCounts[itr->group];

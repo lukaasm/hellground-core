@@ -569,6 +569,9 @@ class TRINITY_DLL_SPEC Creature : public Unit
         Loot loot;
         bool lootForPickPocketed;
         bool lootForBody;
+        bool lootForSkin;
+
+        void PrepareBodyLootState();
         Player *GetLootRecipient() const;
         bool hasLootRecipient() const { return m_lootRecipient!=0; }
         bool IsPlayerAllowedToLoot(Unit *unit) const { return m_playersAllowedToLoot.empty() || m_playersAllowedToLoot.find(unit->GetGUID()) != m_playersAllowedToLoot.end(); }
@@ -617,6 +620,7 @@ class TRINITY_DLL_SPEC Creature : public Unit
         time_t GetRespawnTimeEx() const;
         void SetRespawnTime(uint32 respawn) { m_respawnTime = respawn ? time(NULL) + respawn : 0; }
         void Respawn();
+        void RespawnNearPos(float x, float y);
         void SaveRespawnTime();
 
         uint32 GetRespawnDelay() const { return m_respawnDelay; }
@@ -628,6 +632,8 @@ class TRINITY_DLL_SPEC Creature : public Unit
         // Linked Creature Respawning System
         time_t GetLinkedCreatureRespawnTime() const;
         const CreatureData* GetLinkedRespawnCreatureData() const;
+
+        void SendAreaSpiritHealerQueryOpcode(Player *pl);
 
         void SendZoneUnderAttackMessage(Player* attacker);
         void SetInCombatWithZone();
@@ -693,7 +699,7 @@ class TRINITY_DLL_SPEC Creature : public Unit
         std::set<uint64> m_playersAllowedToLoot;
 
         /// Timers
-        uint32 m_deathTimer;                                // (msecs)timer for death or corpse disappearance
+        uint32 m_corpseDecayTimer;                          // (msecs)timer for death or corpse disappearance
         time_t m_respawnTime;                               // (secs) time of next respawn
         uint32 m_respawnDelay;                              // (secs) delay between corpse disappearance and respawning
         uint32 m_corpseDelay;                               // (secs) delay between death and corpse disappearance

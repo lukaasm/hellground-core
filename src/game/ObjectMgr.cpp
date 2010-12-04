@@ -256,10 +256,10 @@ ArenaTeam* ObjectMgr::GetArenaTeamByName(const std::string& arenateamname) const
     return NULL;
 }
 
-ArenaTeam* ObjectMgr::GetArenaTeamByCaptain(uint64 const& guid) const
+ArenaTeam* ObjectMgr::GetArenaTeamByCaptain(ObjectGuid guid) const
 {
     for(ArenaTeamMap::const_iterator itr = mArenaTeamMap.begin(); itr != mArenaTeamMap.end(); ++itr)
-        if (itr->second->GetCaptain() == guid)
+        if (itr->second->GetCaptainGuid() == guid)
             return itr->second;
 
     return NULL;
@@ -1833,39 +1833,39 @@ void ObjectMgr::LoadPlayerInfo()
             float  positionY = fields[5].GetFloat();
             float  positionZ = fields[6].GetFloat();
 
-            if(current_race >= MAX_RACES)
+            if (current_race >= MAX_RACES)
             {
                 sLog.outErrorDb("Wrong race %u in `playercreateinfo` table, ignoring.",current_race);
                 continue;
             }
 
             ChrRacesEntry const* rEntry = sChrRacesStore.LookupEntry(current_race);
-            if(!rEntry)
+            if (!rEntry)
             {
                 sLog.outErrorDb("Wrong race %u in `playercreateinfo` table, ignoring.",current_race);
                 continue;
             }
 
-            if(current_class >= MAX_CLASSES)
+            if (current_class >= MAX_CLASSES)
             {
                 sLog.outErrorDb("Wrong class %u in `playercreateinfo` table, ignoring.",current_class);
                 continue;
             }
 
-            if(!sChrClassesStore.LookupEntry(current_class))
+            if (!sChrClassesStore.LookupEntry(current_class))
             {
                 sLog.outErrorDb("Wrong class %u in `playercreateinfo` table, ignoring.",current_class);
                 continue;
             }
 
             // accept DB data only for valid position (and non instanceable)
-            if( !MapManager::IsValidMapCoord(mapId,positionX,positionY,positionZ) )
+            if (!MapManager::IsValidMapCoord(mapId,positionX,positionY,positionZ))
             {
                 sLog.outErrorDb("Wrong home position for class %u race %u pair in `playercreateinfo` table, ignoring.",current_class,current_race);
                 continue;
             }
 
-            if( sMapStore.LookupEntry(mapId)->Instanceable() )
+            if (sMapStore.LookupEntry(mapId)->Instanceable())
             {
                 sLog.outErrorDb("Home position in instanceable map for class %u race %u pair in `playercreateinfo` table, ignoring.",current_class,current_race);
                 continue;
@@ -1916,14 +1916,14 @@ void ObjectMgr::LoadPlayerInfo()
                 Field* fields = result->Fetch();
 
                 uint32 current_race = fields[0].GetUInt32();
-                if(current_race >= MAX_RACES)
+                if (current_race >= MAX_RACES)
                 {
                     sLog.outErrorDb("Wrong race %u in `playercreateinfo_item` table, ignoring.",current_race);
                     continue;
                 }
 
                 uint32 current_class = fields[1].GetUInt32();
-                if(current_class >= MAX_CLASSES)
+                if (current_class >= MAX_CLASSES)
                 {
                     sLog.outErrorDb("Wrong class %u in `playercreateinfo_item` table, ignoring.",current_class);
                     continue;
@@ -1933,7 +1933,7 @@ void ObjectMgr::LoadPlayerInfo()
 
                 uint32 item_id = fields[2].GetUInt32();
 
-                if(!GetItemPrototype(item_id))
+                if (!GetItemPrototype(item_id))
                 {
                     sLog.outErrorDb("Item id %u (race %u class %u) in `playercreateinfo_item` table but not listed in `item_template`, ignoring.",item_id,current_race,current_class);
                     continue;
@@ -1941,7 +1941,7 @@ void ObjectMgr::LoadPlayerInfo()
 
                 uint32 amount  = fields[3].GetUInt32();
 
-                if(!amount)
+                if (!amount)
                 {
                     sLog.outErrorDb("Item id %u (class %u race %u) have amount==0 in `playercreateinfo_item` table, ignoring.",item_id,current_race,current_class);
                     continue;
@@ -1952,7 +1952,7 @@ void ObjectMgr::LoadPlayerInfo()
                 bar.step();
                 ++count;
             }
-            while(result->NextRow());
+            while (result->NextRow());
 
             sLog.outString();
             sLog.outString( ">> Loaded %u custom player create items", count );
@@ -1963,7 +1963,7 @@ void ObjectMgr::LoadPlayerInfo()
     {
 
         QueryResult_AutoPtr result = QueryResult_AutoPtr(NULL);
-        if(sWorld.getConfig(CONFIG_START_ALL_SPELLS))
+        if (sWorld.getConfig(CONFIG_START_ALL_SPELLS))
             result = WorldDatabase.Query("SELECT race, class, Spell, Active FROM playercreateinfo_spell_custom");
         else
             result = WorldDatabase.Query("SELECT race, class, Spell, Active FROM playercreateinfo_spell");
@@ -1987,14 +1987,14 @@ void ObjectMgr::LoadPlayerInfo()
                 Field* fields = result->Fetch();
 
                 uint32 current_race = fields[0].GetUInt32();
-                if(current_race >= MAX_RACES)
+                if (current_race >= MAX_RACES)
                 {
                     sLog.outErrorDb("Wrong race %u in `playercreateinfo_spell` table, ignoring.",current_race);
                     continue;
                 }
 
                 uint32 current_class = fields[1].GetUInt32();
-                if(current_class >= MAX_CLASSES)
+                if (current_class >= MAX_CLASSES)
                 {
                     sLog.outErrorDb("Wrong class %u in `playercreateinfo_spell` table, ignoring.",current_class);
                     continue;
@@ -2006,7 +2006,7 @@ void ObjectMgr::LoadPlayerInfo()
                 bar.step();
                 ++count;
             }
-            while( result->NextRow() );
+            while (result->NextRow());
 
             sLog.outString();
             sLog.outString( ">> Loaded %u player create spells", count );
@@ -2030,21 +2030,21 @@ void ObjectMgr::LoadPlayerInfo()
         }
         else
         {
-            barGoLink bar( result->GetRowCount() );
+            barGoLink bar(result->GetRowCount());
 
             do
             {
                 Field* fields = result->Fetch();
 
                 uint32 current_race = fields[0].GetUInt32();
-                if(current_race >= MAX_RACES)
+                if (current_race >= MAX_RACES)
                 {
                     sLog.outErrorDb("Wrong race %u in `playercreateinfo_action` table, ignoring.",current_race);
                     continue;
                 }
 
                 uint32 current_class = fields[1].GetUInt32();
-                if(current_class >= MAX_CLASSES)
+                if (current_class >= MAX_CLASSES)
                 {
                     sLog.outErrorDb("Wrong class %u in `playercreateinfo_action` table, ignoring.",current_class);
                     continue;
@@ -2059,7 +2059,7 @@ void ObjectMgr::LoadPlayerInfo()
                 bar.step();
                 ++count;
             }
-            while( result->NextRow() );
+            while (result->NextRow());
 
             sLog.outString();
             sLog.outString( ">> Loaded %u player create actions", count );
@@ -2090,16 +2090,16 @@ void ObjectMgr::LoadPlayerInfo()
             Field* fields = result->Fetch();
 
             uint32 current_class = fields[0].GetUInt32();
-            if(current_class >= MAX_CLASSES)
+            if (current_class >= MAX_CLASSES)
             {
                 sLog.outErrorDb("Wrong class %u in `player_classlevelstats` table, ignoring.",current_class);
                 continue;
             }
 
             uint32 current_level = fields[1].GetUInt32();
-            if(current_level > sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL))
+            if (current_level > sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL))
             {
-                if(current_level > STRONG_MAX_LEVEL)        // hardcoded level maximum
+                if (current_level > STRONG_MAX_LEVEL)        // hardcoded level maximum
                     sLog.outErrorDb("Wrong (> %u) level %u in `player_classlevelstats` table, ignoring.",STRONG_MAX_LEVEL,current_level);
                 else
                     sLog.outDetail("Unused (> MaxPlayerLevel in Trinityd.conf) level %u in `player_classlevelstats` table, ignoring.",current_level);
@@ -2108,7 +2108,7 @@ void ObjectMgr::LoadPlayerInfo()
 
             PlayerClassInfo* pClassInfo = &playerClassInfo[current_class];
 
-            if(!pClassInfo->levelInfo)
+            if (!pClassInfo->levelInfo)
                 pClassInfo->levelInfo = new PlayerClassLevelInfo[sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL)];
 
             PlayerClassLevelInfo* pClassLevelInfo = &pClassInfo->levelInfo[current_level-1];
@@ -2129,13 +2129,13 @@ void ObjectMgr::LoadPlayerInfo()
     for (int class_ = 0; class_ < MAX_CLASSES; ++class_)
     {
         // skip non existed classes
-        if(!sChrClassesStore.LookupEntry(class_))
+        if (!sChrClassesStore.LookupEntry(class_))
             continue;
 
         PlayerClassInfo* pClassInfo = &playerClassInfo[class_];
 
         // fatal error if no level 1 data
-        if(!pClassInfo->levelInfo || pClassInfo->levelInfo[0].basehealth == 0 )
+        if (!pClassInfo->levelInfo || pClassInfo->levelInfo[0].basehealth == 0 )
         {
             sLog.outErrorDb("Class %i Level 1 does not have health/mana data!",class_);
             exit(1);
@@ -2144,7 +2144,7 @@ void ObjectMgr::LoadPlayerInfo()
         // fill level gaps
         for (uint32 level = 1; level < sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
         {
-            if(pClassInfo->levelInfo[level].basehealth == 0)
+            if (pClassInfo->levelInfo[level].basehealth == 0)
             {
                 sLog.outErrorDb("Class %i Level %i does not have health/mana data. Using stats data of level %i.",class_,level+1, level);
                 pClassInfo->levelInfo[level] = pClassInfo->levelInfo[level-1];
@@ -2176,21 +2176,21 @@ void ObjectMgr::LoadPlayerInfo()
             Field* fields = result->Fetch();
 
             uint32 current_race = fields[0].GetUInt32();
-            if(current_race >= MAX_RACES)
+            if (current_race >= MAX_RACES)
             {
                 sLog.outErrorDb("Wrong race %u in `player_levelstats` table, ignoring.",current_race);
                 continue;
             }
 
             uint32 current_class = fields[1].GetUInt32();
-            if(current_class >= MAX_CLASSES)
+            if (current_class >= MAX_CLASSES)
             {
                 sLog.outErrorDb("Wrong class %u in `player_levelstats` table, ignoring.",current_class);
                 continue;
             }
 
             uint32 current_level = fields[2].GetUInt32();
-            if(current_level > sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL))
+            if (current_level > sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL))
             {
                 if(current_level > STRONG_MAX_LEVEL)        // hardcoded level maximum
                     sLog.outErrorDb("Wrong (> %u) level %u in `player_levelstats` table, ignoring.",STRONG_MAX_LEVEL,current_level);
@@ -2201,7 +2201,7 @@ void ObjectMgr::LoadPlayerInfo()
 
             PlayerInfo* pInfo = &playerInfo[current_race][current_class];
 
-            if(!pInfo->levelInfo)
+            if (!pInfo->levelInfo)
                 pInfo->levelInfo = new PlayerLevelInfo[sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL)];
 
             PlayerLevelInfo* pLevelInfo = &pInfo->levelInfo[current_level-1];
@@ -2224,19 +2224,19 @@ void ObjectMgr::LoadPlayerInfo()
     for (int race = 0; race < MAX_RACES; ++race)
     {
         // skip non existed races
-        if(!sChrRacesStore.LookupEntry(race))
+        if (!sChrRacesStore.LookupEntry(race))
             continue;
 
         for (int class_ = 0; class_ < MAX_CLASSES; ++class_)
         {
             // skip non existed classes
-            if(!sChrClassesStore.LookupEntry(class_))
+            if (!sChrClassesStore.LookupEntry(class_))
                 continue;
 
             PlayerInfo* pInfo = &playerInfo[race][class_];
 
             // skip non loaded combinations
-            if(!pInfo->displayId_m || !pInfo->displayId_f)
+            if (!pInfo->displayId_m || !pInfo->displayId_f)
                 continue;
 
             // skip expansion races if not playing with expansion
@@ -2248,7 +2248,7 @@ void ObjectMgr::LoadPlayerInfo()
                 continue;
 
             // fatal error if no level 1 data
-            if(!pInfo->levelInfo || pInfo->levelInfo[0].stats[0] == 0 )
+            if (!pInfo->levelInfo || pInfo->levelInfo[0].stats[0] == 0 )
             {
                 sLog.outErrorDb("Race %i Class %i Level 1 does not have stats data!",race,class_);
                 exit(1);
@@ -2257,7 +2257,7 @@ void ObjectMgr::LoadPlayerInfo()
             // fill level gaps
             for (uint32 level = 1; level < sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
             {
-                if(pInfo->levelInfo[level].stats[0] == 0)
+                if (pInfo->levelInfo[level].stats[0] == 0)
                 {
                     sLog.outErrorDb("Race %i Class %i Level %i does not have stats data. Using stats data of level %i.",race,class_,level+1, level);
                     pInfo->levelInfo[level] = pInfo->levelInfo[level-1];
@@ -2417,7 +2417,11 @@ void ObjectMgr::LoadArenaTeams()
 {
     uint32 count = 0;
 
-    QueryResult_AutoPtr result = CharacterDatabase.Query( "SELECT arenateamid FROM arena_team" );
+    //                                                     0                      1    2           3    4               5
+    QueryResult_AutoPtr result = CharacterDatabase.Query( "SELECT arena_team.arenateamid,name,captainguid,type,BackgroundColor,EmblemStyle,"
+    //   6           7           8            9      10    11   12     13    14
+        "EmblemColor,BorderStyle,BorderColor, rating,games,wins,played,wins2,rank "
+        "FROM arena_team LEFT JOIN arena_team_stats ON arena_team.arenateamid = arena_team_stats.arenateamid ORDER BY arena_team.arenateamid ASC" );
 
     if( !result )
     {
@@ -2431,7 +2435,13 @@ void ObjectMgr::LoadArenaTeams()
         return;
     }
 
-    barGoLink bar( result->GetRowCount() );
+    // load arena_team members
+    QueryResult_AutoPtr arenaTeamMembersResult = CharacterDatabase.Query(
+    //          0           1           2           3         4             5           6               7    8
+        "SELECT arenateamid,member.guid,played_week,wons_week,played_season,wons_season,personal_rating,name,class "
+        "FROM arena_team_member member LEFT JOIN characters chars on member.guid = chars.guid ORDER BY member.arenateamid ASC");
+
+    barGoLink bar( (int)result->GetRowCount() );
 
     do
     {
@@ -2440,13 +2450,15 @@ void ObjectMgr::LoadArenaTeams()
         bar.step();
         ++count;
 
-        ArenaTeam *newarenateam = new ArenaTeam;
-        if(!newarenateam->LoadArenaTeamFromDB(fields[0].GetUInt32()))
+        ArenaTeam *newArenaTeam = new ArenaTeam;
+        if (!newArenaTeam->LoadArenaTeamFromDB(result) ||
+            !newArenaTeam->LoadMembersFromDB(arenaTeamMembersResult))
         {
-            delete newarenateam;
+            newArenaTeam->Disband(NULL);
+            delete newArenaTeam;
             continue;
         }
-        AddArenaTeam(newarenateam);
+        AddArenaTeam(newArenaTeam);
     }while( result->NextRow() );
 
     sLog.outString();
@@ -3496,7 +3508,7 @@ void ObjectMgr::LoadScripts(ScriptMapMap& scripts, char const* tablename)
                     continue;
                 }
 
-                // if(!objmgr.GetMangosStringLocale(tmp.dataint)) will checked after db_script_string loading
+                // if(!objmgr.GetTrinityStringLocale(tmp.dataint)) will checked after db_script_string loading
                 break;
             }
 
@@ -6056,44 +6068,6 @@ int ObjectMgr::GetOrNewIndexForLocale( LocaleConstant loc )
     return m_LocalForIndex.size()-1;
 }
 
-void ObjectMgr::LoadBattleMastersEntry()
-{
-    mBattleMastersMap.clear();                              // need for reload case
-
-    QueryResult_AutoPtr result = WorldDatabase.Query( "SELECT entry,bg_template FROM battlemaster_entry" );
-
-    uint32 count = 0;
-
-    if( !result )
-    {
-        barGoLink bar( 1 );
-        bar.step();
-
-        sLog.outString();
-        sLog.outString( ">> Loaded 0 battlemaster entries - table is empty!" );
-        return;
-    }
-
-    barGoLink bar( result->GetRowCount() );
-
-    do
-    {
-        ++count;
-        bar.step();
-
-        Field *fields = result->Fetch();
-
-        uint32 entry = fields[0].GetUInt32();
-        uint32 bgTypeId  = fields[1].GetUInt32();
-
-        mBattleMastersMap[entry] = bgTypeId;
-
-    } while( result->NextRow() );
-
-    sLog.outString();
-    sLog.outString( ">> Loaded %u battlemaster entries", count );
-}
-
 void ObjectMgr::LoadGameObjectForQuests()
 {
     mGameObjectForQuestSet.clear();                         // need for reload case
@@ -6480,7 +6454,11 @@ bool PlayerCondition::Meets(Player const * player) const
         case CONDITION_ITEM_EQUIPPED:
             return player->GetItemOrItemWithGemEquipped(value1) != NULL;
         case CONDITION_ZONEID:
-            return player->GetZoneId() == value1;
+        {
+            uint32 zone, area;
+            player->GetZoneAndAreaId(zone,area);
+            return (zone == value1 || area == value1) == (value2 == 0);
+        }
         case CONDITION_REPUTATION_RANK:
         {
             FactionEntry const* faction = sFactionStore.LookupEntry(value1);

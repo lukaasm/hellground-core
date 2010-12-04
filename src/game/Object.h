@@ -116,6 +116,9 @@ class TRINITY_DLL_SPEC Object
             ClearUpdateMask(true);
         }
 
+        ObjectGuid const& GetGuidValue( uint16 index ) const { return *reinterpret_cast<ObjectGuid const*>(&GetUInt64Value(index)); }
+
+        ObjectGuid const& GetObjectGuid() const { return GetGuidValue(OBJECT_FIELD_GUID); }
         const uint64& GetGUID() const { return GetUInt64Value(0); }
         uint32 GetGUIDLow() const { return GUID_LOPART(GetUInt64Value(0)); }
         uint32 GetGUIDMid() const { return GUID_ENPART(GetUInt64Value(0)); }
@@ -412,6 +415,7 @@ class TRINITY_DLL_SPEC WorldObject : public Object, public WorldLocation
 
         uint32 GetZoneId() const;
         uint32 GetAreaId() const;
+        void GetZoneAndAreaId(uint32& zoneid, uint32& areaid) const;
 
         InstanceData* GetInstanceData();
 
@@ -428,6 +432,7 @@ class TRINITY_DLL_SPEC WorldObject : public Object, public WorldLocation
         bool GetDistanceOrder(WorldObject const* obj1, WorldObject const* obj2, bool is3D = true) const;
         float GetExactDistance2d(const float x, const float y) const;
         float GetDistanceZ(const WorldObject* obj) const;
+        bool IsWithinDist3d(float x, float y, float z, float dist2compare) const;
 
         float GetExactDist2dSq(float x, float y) const
             { float dx = m_positionX - x; float dy = m_positionY - y; return dx*dx + dy*dy; }
@@ -492,6 +497,7 @@ class TRINITY_DLL_SPEC WorldObject : public Object, public WorldLocation
         void BuildMonsterChat(WorldPacket *data, uint8 msgtype, char const* text, uint32 language, char const* name, uint64 TargetGuid, bool withoutPrename = false) const;
 
         void SendObjectDeSpawnAnim(uint64 guid);
+        void SendGameObjectCustomAnim(uint64 guid);
 
         virtual void SaveRespawnTime() {}
 

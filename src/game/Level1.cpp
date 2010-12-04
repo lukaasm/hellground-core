@@ -699,8 +699,8 @@ bool ChatHandler::HandleGPSCommand(const char* args)
     CellPair cell_val = Trinity::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
     Cell cell(cell_val);
 
-    uint32 zone_id = obj->GetZoneId();
-    uint32 area_id = obj->GetAreaId();
+    uint32 zone_id, area_id;
+    obj->GetZoneAndAreaId(zone_id,area_id);
 
     MapEntry const* mapEntry = sMapStore.LookupEntry(obj->GetMapId());
     AreaTableEntry const* zoneEntry = GetAreaEntryByAreaID(zone_id);
@@ -798,7 +798,7 @@ bool ChatHandler::HandleNamegoCommand(const char* args)
                 return false;
             }
 
-            target->SetBattleGroundId(m_session->GetPlayer()->GetBattleGroundId());
+            target->SetBattleGroundId(m_session->GetPlayer()->GetBattleGroundId(), m_session->GetPlayer()->GetBattleGroundTypeId());
             target->SetBattleGroundEntryPoint(target->GetMapId(),target->GetPositionX(),target->GetPositionY(),target->GetPositionZ(),target->GetOrientation());
         }
         else if(pMap->IsDungeon())
@@ -903,7 +903,7 @@ bool ChatHandler::HandleGonameCommand(const char* args)
             }
             // all's well, set bg id
             // when porting out from the bg, it will be reset to 0
-            _player->SetBattleGroundId(target->GetBattleGroundId());
+            _player->SetBattleGroundId(target->GetBattleGroundId(), target->GetBattleGroundTypeId());
             _player->SetBattleGroundEntryPoint(_player->GetMapId(),_player->GetPositionX(),_player->GetPositionY(),_player->GetPositionZ(),_player->GetOrientation());
         }
         else if(cMap->IsDungeon())

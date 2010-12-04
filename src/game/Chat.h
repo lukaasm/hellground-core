@@ -227,6 +227,7 @@ class ChatHandler
         bool HandleReloadAccessRequirementCommand(const char* args);
         bool HandleReloadEventScriptsCommand(const char* args);
         bool HandleReloadCommandCommand(const char* args);
+        bool HandleReloadBattleEventCommand(const char* args);
         bool HandleReloadCreatureQuestRelationsCommand(const char* args);
         bool HandleReloadCreatureQuestInvRelationsCommand(const char* args);
         bool HandleReloadCreatureLinkedRespawnCommand(const char* args);
@@ -500,6 +501,7 @@ class ChatHandler
         bool HandleGetItemState(const char * args);
         bool HandleGetLootRecipient(const char * args);
         bool HandleDebugArenaCommand(const char * args);
+        bool HandleDebugBattlegroundCommand(const char* args);
         bool HandleDebugThreatList(const char * args);
         bool HandleDebugHostilRefList(const char * args);
         bool HandlePossessCommand(const char* args);

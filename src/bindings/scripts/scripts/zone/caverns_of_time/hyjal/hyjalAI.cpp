@@ -825,15 +825,15 @@ void hyjalAI::UpdateAI(const uint32 diff)
         if(RespawnTimer < diff)
         {
             DoRespawn = false;
-            RespawnNearPos(m_creature->GetPositionX(), m_creature->GetPositionY());
+            m_creature->RespawnNearPos(m_creature->GetPositionX(), m_creature->GetPositionY());
             if(Faction == 0)
             {
-                RespawnNearPos(5037.76, -1889.71);
+                m_creature->RespawnNearPos(5037.76, -1889.71);
             }
             else if (Faction == 1)
             {
-                RespawnNearPos(5563, -2763.19);
-                RespawnNearPos(5542.2, -2629.36);
+                m_creature->RespawnNearPos(5563, -2763.19);
+                m_creature->RespawnNearPos(5542.2, -2629.36);
             }
             m_creature->SetVisibility(VISIBILITY_ON);
         }
@@ -1016,19 +1016,6 @@ void hyjalAI::HideNearPos(float x, float y)
             (*itr)->setFaction(35);//make them friendly so mobs won't attack them
         }
     }
-}
-
-void hyjalAI::RespawnNearPos(float x, float y)
-{
-    CellPair p(Trinity::ComputeCellPair(x, y));
-    Cell cell(p);
-    cell.data.Part.reserved = ALL_DISTRICT;
-    cell.SetNoCreate();
-
-    Trinity::RespawnDo u_do;
-    Trinity::WorldObjectWorker<Trinity::RespawnDo> worker(u_do);
-    TypeContainerVisitor<Trinity::WorldObjectWorker<Trinity::RespawnDo>, GridTypeMapContainer > obj_worker(worker);
-    cell.Visit(p, obj_worker, *m_creature->GetMap());
 }
 
 void hyjalAI::WaypointReached(uint32 i)

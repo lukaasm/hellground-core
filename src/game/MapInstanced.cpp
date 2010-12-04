@@ -203,6 +203,7 @@ BattleGroundMap* MapInstanced::CreateBattleGround(uint32 InstanceId, BattleGroun
 
     BattleGroundMap *map = new BattleGroundMap(GetId(), GetGridExpiry(), InstanceId, bg);
     assert(map->IsBattleGroundOrArena());
+    bg->SetBgMap(map);
 
     m_InstancedMaps[InstanceId] = map;
     return map;

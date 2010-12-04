@@ -261,47 +261,31 @@ void WorldSession::HandleTrainerBuySpellOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandleGossipHelloOpcode( WorldPacket & recv_data )
 {
-    CHECK_PACKET_SIZE(recv_data,8);
-
     sLog.outDebug(  "WORLD: Received CMSG_GOSSIP_HELLO" );
 
     uint64 guid;
     recv_data >> guid;
 
-    Creature *unit = GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_NONE);
-    if (!unit)
+    Creature *pCreature = GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_NONE);
+    if (!pCreature)
     {
-        sLog.outDebug( "WORLD: HandleGossipHelloOpcode - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(guid)) );
+        sLog.outDebug("WORLD: HandleGossipHelloOpcode - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(guid)) );
         return;
     }
 
     GetPlayer()->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TALK);
-    // remove fake death
-    //if(GetPlayer()->hasUnitState(UNIT_STAT_DIED))
-    //    GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
 
-    if( unit->isArmorer() || unit->isCivilian() || unit->isQuestGiver() || unit->isServiceProvider())
-    {
-        unit->StopMoving();
-    }
+    if (pCreature->isArmorer() || pCreature->isCivilian() || pCreature->isQuestGiver() || pCreature->isServiceProvider())
+        pCreature->StopMoving();
 
-    // If spiritguide, no need for gossip menu, just put player into resurrect queue
-    if (unit->isSpiritGuide())
-    {
-        BattleGround *bg = _player->GetBattleGround();
-        if(bg)
-        {
-            bg->AddPlayerToResurrectQueue(unit->GetGUID(), _player->GetGUID());
-            sBattleGroundMgr.SendAreaSpiritHealerQueryOpcode(_player, bg, unit->GetGUID());
-            return;
-        }
-    }
+    if (pCreature->isSpiritGuide())
+        pCreature->SendAreaSpiritHealerQueryOpcode(_player);
 
-    if(!Script->GossipHello( _player, unit ))
+    if (!Script->GossipHello(_player, pCreature))
     {
-        _player->TalkedToCreature(unit->GetEntry(),unit->GetGUID());
-        unit->prepareGossipMenu(_player);
-        unit->sendPreparedGossip(_player);
+        _player->TalkedToCreature(pCreature->GetEntry(), pCreature->GetGUID());
+        pCreature->prepareGossipMenu(_player);
+        pCreature->sendPreparedGossip(_player);
     }
 }
 

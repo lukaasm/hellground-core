@@ -560,6 +560,15 @@ bool ChatHandler::HandleReloadAllCommand(const char*)
     HandleReloadTrinityStringCommand("");
     HandleReloadGameTeleCommand("");
     HandleReloadUnqueuedAccountListCommand("");
+    HandleReloadBattleEventCommand("");
+    return true;
+}
+
+bool ChatHandler::HandleReloadBattleEventCommand(const char*)
+{
+    sLog.outString( "Re-Loading BattleGround Eventindexes..." );
+    sBattleGroundMgr.LoadBattleEventIndexes();
+    SendGlobalSysMessage("DB table `gameobject_battleground` and `creature_battleground` reloaded.");
     return true;
 }
 

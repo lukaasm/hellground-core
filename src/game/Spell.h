@@ -432,6 +432,7 @@ class Spell
         uint8 m_cast_count;
         SpellCastTargets m_targets;
 
+        uint32 GetTimer() const { return m_timer; }
         int32 GetCastTime() const { return m_casttime; }
         bool IsAutoRepeat() const { return m_autoRepeat; }
         void SetAutoRepeat(bool rep) { m_autoRepeat = rep; }
@@ -727,38 +728,43 @@ namespace Trinity
 
             for(typename GridRefManager<T>::iterator itr = m.begin(); itr != m.end(); ++itr)
             {
-                if( !itr->getSource()->isAlive() || (itr->getSource()->GetTypeId() == TYPEID_PLAYER && ((Player*)itr->getSource())->isInFlight()))
+                // there are still more spells which can be casted on dead, but
+                // they are no AOE and don't have such a nice SPELL_ATTR flag
+                if ( !itr->getSource()->isTargetableForAttack(i_spell.m_spellInfo->AttributesEx3 & SPELL_ATTR_EX3_CAST_ON_DEAD)
+                    // mostly phase check
+                   || !itr->getSource()->IsInMap(i_caster))
                     continue;
 
                 switch (i_TargetType)
                 {
                     case SPELL_TARGETS_ALLY:
-                        if (!itr->getSource()->isAttackableByAOE() || !i_caster->IsFriendlyTo( itr->getSource() ))
+                        if (i_caster->IsHostileTo(itr->getSource()))
                             continue;
                         break;
                     case SPELL_TARGETS_ENEMY:
                     {
-                        if(itr->getSource()->GetTypeId()==TYPEID_UNIT && ((Creature*)itr->getSource())->isTotem())
+                        if (itr->getSource()->GetTypeId()==TYPEID_UNIT && ((Creature*)itr->getSource())->isTotem())
                             continue;
-                        if(!itr->getSource()->isAttackableByAOE())
+
+                        if (!itr->getSource()->isAttackableByAOE())
                             continue;
 
                         Unit* check = i_caster->GetCharmerOrOwnerOrSelf();
 
-                        if( check->GetTypeId()==TYPEID_PLAYER )
+                        if (check->GetTypeId() == TYPEID_PLAYER)
                         {
-                            if (check->IsFriendlyTo( itr->getSource() ))
+                            if (check->IsFriendlyTo(itr->getSource()))
                                 continue;
                         }
                         else
                         {
-                            if (!check->IsHostileTo( itr->getSource() ))
+                            if (!check->IsHostileTo(itr->getSource()))
                                 continue;
                         }
                     }break;
                     case SPELL_TARGETS_ENTRY:
                     {
-                        if(itr->getSource()->GetEntry()!= i_entry)
+                        if (itr->getSource()->GetEntry() != i_entry)
                             continue;
                     }break;
                     default: continue;
@@ -767,21 +773,21 @@ namespace Trinity
                 switch(i_push_type)
                 {
                     case PUSH_IN_FRONT:
-                        if(i_caster->isInFront((Unit*)(itr->getSource()), i_radius, M_PI/3 ))
+                        if (i_caster->isInFront((Unit*)(itr->getSource()), i_radius, M_PI/3))
                             i_data->push_back(itr->getSource());
                         break;
                     case PUSH_IN_BACK:
-                        if(i_caster->isInBack((Unit*)(itr->getSource()), i_radius, M_PI/3 ))
+                        if (i_caster->isInBack((Unit*)(itr->getSource()), i_radius, M_PI/3))
                             i_data->push_back(itr->getSource());
                         break;
                     case PUSH_IN_LINE:
-                        if(i_caster->isInLine((Unit*)(itr->getSource()), i_radius ))
+                        if (i_caster->isInLine((Unit*)(itr->getSource()), i_radius))
                             i_data->push_back(itr->getSource());
                         break;
                     default:
-                        if(i_TargetType != SPELL_TARGETS_ENTRY && i_push_type == PUSH_SRC_CENTER && i_caster) // if caster then check distance from caster to target (because of model collision)
+                        if (i_TargetType != SPELL_TARGETS_ENTRY && i_push_type == PUSH_SRC_CENTER && i_caster) // if caster then check distance from caster to target (because of model collision)
                         {
-                            if(i_caster->IsWithinDistInMap(itr->getSource(), i_radius))
+                            if (i_caster->IsWithinDistInMap(itr->getSource(), i_radius))
                             {
                                 if(i_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)i_caster)->isTotem())
                                 {
@@ -794,7 +800,7 @@ namespace Trinity
                         }
                         else
                         {
-                            if((itr->getSource()->GetDistanceSq(i_x, i_y, i_z) < i_radiusSq))
+                            if ((itr->getSource()->GetDistanceSq(i_x, i_y, i_z) < i_radiusSq))
                                 i_data->push_back(itr->getSource());
                         }
                         break;
