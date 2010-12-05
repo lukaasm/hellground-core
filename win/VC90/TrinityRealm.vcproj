@@ -46,7 +46,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
+				AdditionalOptions=""
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\dep\include;..\..\src\framework;..\..\src\shared;..\..\src\shared\Database;..\..\src\shared\vmap;..\..\dep\ACE_wrappers;..\..\src\game\"
 				PreprocessorDefinitions="VERSION=&quot;0.12.0-SVN&quot;,WIN32,NDEBUG,_CONSOLE"
@@ -145,9 +145,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\dep\include;..\..\src\framework;..\..\src\shared;..\..\src\realmd;..\..\dep\ACE_wrappers"
+				AdditionalIncludeDirectories="..\..\dep\include;..\..\src\framework;..\..\src\shared;..\..\src\shared\Database;..\..\src\shared\vmap;..\..\dep\ACE_wrappers;..\..\src\game\"
 				PreprocessorDefinitions="VERSION=&quot;0.12.0-SVN&quot;;WIN32;_DEBUG;TRINITY_DEBUG;_CONSOLE"
 				IgnoreStandardIncludePath="false"
 				BasicRuntimeChecks="3"
@@ -182,6 +181,7 @@
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="&quot;..\..\dep\lib\$(PlatformName)_$(ConfigurationName)&quot;"
+				IgnoreDefaultLibraryNames="VCOMPD.lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\..\bin\$(PlatformName)_$(ConfigurationName)\TrinityRealm.pdb"
 				GenerateMapFile="true"
@@ -244,7 +244,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
+				AdditionalOptions=""
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\dep\include;..\..\src\framework;..\..\src\shared;..\..\src\realmd;..\..\dep\ACE_wrappers"
 				PreprocessorDefinitions="VERSION=&quot;0.12.0-SVN&quot;,WIN32,NDEBUG,_CONSOLE"
@@ -340,7 +340,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
+				AdditionalOptions=""
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\dep\include;..\..\src\framework;..\..\src\shared;..\..\src\realmd;..\..\dep\ACE_wrappers"
 				PreprocessorDefinitions="VERSION=&quot;0.12.0-SVN&quot;;WIN32;_DEBUG;TRINITY_DEBUG;_CONSOLE"

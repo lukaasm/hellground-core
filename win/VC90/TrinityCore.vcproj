@@ -147,9 +147,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\dep\include,..\..\src\framework,..\..\src\shared,..\..\src\game,..\..\src\trinitycore;..\..\dep\ACE_wrappers"
+				AdditionalIncludeDirectories="..\..\dep\include;..\..\src\framework;..\..\src\shared;..\..\src\shared\Database;..\..\src\shared\vmap;..\..\dep\ACE_wrappers;..\..\src\game\;..\..\dep\tbb\include"
 				PreprocessorDefinitions="VERSION=&quot;0.12.0-SVN&quot;;WIN32;_DEBUG;TRINITY_DEBUG;_CONSOLE;ENABLE_CLI"
 				IgnoreStandardIncludePath="false"
 				BasicRuntimeChecks="3"
@@ -185,6 +184,7 @@
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\dep\lib\$(PlatformName)_$(ConfigurationName);&quot;.\framework__$(PlatformName)_$(ConfigurationName)&quot;"
+				IgnoreDefaultLibraryNames="VCOMPD.lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\..\bin\$(PlatformName)_$(ConfigurationName)\TrinityCore.pdb"
 				GenerateMapFile="true"
