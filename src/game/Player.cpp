@@ -18944,7 +18944,7 @@ uint32 Player::GetMinLevelForBattleGroundQueueId(uint32 queue_id)
     if(queue_id < 1)
         return 0;
 
-    if(queue_id >=6)
+    if(queue_id >= 6)
         queue_id = 6;
 
     return 10*(queue_id+1);

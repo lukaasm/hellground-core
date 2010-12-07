@@ -51,7 +51,7 @@
 // apply implementation of the singletons
 #include "Policies/SingletonImp.h"
 #include "Map.h"
-#include "BattlegroundMgr.h"
+#include "BattleGroundMgr.h"
 #include "Spell.h"
 
 void TrainerSpellData::Clear()
