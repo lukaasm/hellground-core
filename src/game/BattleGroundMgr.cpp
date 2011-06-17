@@ -347,11 +347,8 @@ bool BattleGroundQueue::SelectionPool::Build(uint32 MinPlayers, uint32 MaxPlayer
         {
             if (Player *plr = objmgr.GetPlayer(it->first))
             {
-                if (plr->GetBattleGround())
-                {
-                    inBattleGround = true;
+                if (inBattleGround = plr->InBattleGround())
                     break;
-                }
             }
         }
 
